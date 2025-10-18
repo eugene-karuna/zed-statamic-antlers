@@ -1,8 +1,8 @@
 use std::{env, fs};
 use zed_extension_api::{self as zed, Result};
 
-const SERVER_PATH: &str = "node_modules/vscode-antlers-language-server/dist/server.js";
-const PACKAGE_NAME: &str = "vscode-antlers-language-server";
+const SERVER_PATH: &str = "node_modules/antlers-language-server/server.js";
+const PACKAGE_NAME: &str = "antlers-language-server";
 
 struct StatamicAntlersExtension {
     did_find_server: bool,
@@ -23,7 +23,7 @@ impl StatamicAntlersExtension {
             &language_server_id,
             &zed::LanguageServerInstallationStatus::CheckingForUpdate,
         );
-        let version = "2.2.0".to_string();
+        let version = "1.3.14".to_string();
 
         if !server_exists
             || zed::npm_package_installed_version(PACKAGE_NAME)?.as_ref() != Some(&version)
