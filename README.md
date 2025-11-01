@@ -11,7 +11,7 @@ Edit your `~/Library/Application\ Support/Zed/extensions/installed/emmet/extensi
 ```toml
 [language_servers.emmet-language-server]
 language = "HTML"
-languages = ["HTML", "PHP", "ERB", "JavaScript", "TSX", "CSS", "Antlers"]
+languages = ["HTML", "PHP", "ERB", "JavaScript", "TSX", "CSS", "Statamic Antlers"]
 
 [language_servers.emmet-language-server.language_ids]
 TSX = "typescriptreact"
