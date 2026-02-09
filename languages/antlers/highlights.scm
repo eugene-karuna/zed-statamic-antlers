@@ -4,94 +4,78 @@
 ;; Tag delimiters
 ["{{" "}}"] @punctuation.bracket
 
-;; Control structures
-(if_statement
-  ["if" "elseif" "else" "/if"] @keyword.control.conditional)
+;; Control structure keywords
+(if_keyword) @keyword
+(unless_keyword) @keyword
+["elseif" "else" "/if" "/unless"] @keyword
+(switch_statement "switch" @keyword)
 
-(unless_statement
-  ["unless" "/unless"] @keyword.control.conditional)
+;; Loop keywords
+(collection_keyword) @keyword
+(nav_keyword) @keyword
+(taxonomy_keyword) @keyword
+(form_keyword) @keyword
+(entries_keyword) @keyword
 
-(switch_statement) @keyword.control.conditional
-
-;; Loop structures
-(collection_loop) @keyword.control.repeat
-(nav_loop) @keyword.control.repeat
-(taxonomy_loop) @keyword.control.repeat
-(form_loop) @keyword.control.repeat
-
-;; Special tags
-(partial_tag) @keyword
-(yield_tag) @keyword
-(section_tag) @keyword.control.repeat
-(scope_tag) @keyword.control.repeat
-(asset_tag) @keyword
-(glide_tag) @keyword
-(dump_tag) @keyword.debug
-(user_tag) @keyword
-(cache_tag) @keyword.directive
-(no_cache_tag) @keyword.directive
-(redirect_tag) @keyword.directive
-(session_tag) @keyword
-(markdown_tag) @keyword
-(oauth_tag) @keyword
-(locales_tag) @keyword
-(svg_tag) @keyword
-(template_content_tag) @keyword
-(slot_tag) @keyword.control.repeat
-(push_tag) @keyword.directive
-(prepend_tag) @keyword.directive
-(once_tag) @keyword.directive
+;; Special tag keywords
+["partial" "yield" "section" "scope" "asset" "glide" "dump"
+ "user" "cache" "no_cache" "redirect" "session" "markdown"
+ "oauth" "locales" "svg" "template_content" "slot" "push"
+ "prepend" "once"] @keyword
 
 ;; PHP integration
-(php_raw) @embedded.php
-(php_echo) @embedded.php
+(php_raw) @embedded
+(php_echo) @embedded
 
 ;; Ignore/escape
-(ignore_symbol) @comment.ignore
+(ignore_symbol) @comment
 
-;; Void keyword
+;; Boolean literals
+["true" "false"] @constant.builtin
 "void" @constant.builtin
 
 ;; Variables and identifiers
 (variable) @variable
 (parameter_name) @property
+(modifier_name) @function
 
-;; Functions and modifiers
-(applied_modifier) @function.call
+;; Modifiers
+(applied_modifier) @function
 (array_method_call) @function.method
+
+;; Array method keywords
+["orderby" "groupby" "where" "take" "skip" "merge" "pluck"] @function.builtin
 
 ;; Strings and literals
 (string) @string
 (double_quoted_string) @string
 (single_quoted_string) @string
+(string_escape_sequence) @string.escape
 (number) @number
-(boolean) @constant.builtin
 
-;; Binary operators
-["==" "!=" "<" ">" "<=" ">=" "&&" "||" "and" "or" "xor" "+" "-" "*" "/" "**" "%"] @operator
+;; Comparison and logical operators
+["==" "!=" "===" "!==" "<" ">" "<=" ">=" "<>" "&&" "||"] @operator
+["and" "or" "xor" "bwa" "bwo" "bxor"] @operator
 
-;; Assignment operators
-["=" "+=" "-=" "*=" "/=" "%=" "?="] @operator
+;; Arithmetic and assignment operators
+["+" "-" "*" "/" "**" "%" "=" "+=" "-=" "*=" "/=" "%=" "?="] @operator
 
 ;; Null coalescing and ternary
 "??" @operator
-["?" ":"] @operator
+"?" @operator
 
 ;; Modifier pipe
 "|" @operator
 
-;; Unary operators
-["!" "-" "+"] @operator
+;; Unary
+"!" @operator
 
-;; Brackets and punctuation
-["[" "]" "(" ")"] @punctuation.bracket
-":" @punctuation.delimiter
+;; Punctuation
+["(" ")"] @punctuation.bracket
+["," ":" ";" "."] @punctuation.delimiter
 
 ;; Interpolation
 (interpolated_parameter) @embedded
-
-;; Text content
-(text) @text
 
 ;; Error highlighting
 (ERROR) @error

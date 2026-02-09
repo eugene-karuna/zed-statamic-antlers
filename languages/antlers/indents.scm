@@ -10,10 +10,8 @@
 
 ;; Decrease indent at closing keywords
 [
-  "endif"
-  "endunless"
-  "else"
-  "elseif"
   "/if"
   "/unless"
+  "else"
+  "elseif"
 ] @outdent
