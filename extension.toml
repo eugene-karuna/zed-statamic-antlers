@@ -8,7 +8,7 @@ repository = "https://github.com/mynetx/zed-statamic-antlers"
 
 [grammars.antlers]
 repository = "https://github.com/eugene-karuna/zed-statamic-antlers"
-commit = "3b3a9e5d224123a5d9aae997fae4c89e80afc6e3"
+commit = "49188d53f5377f2b8194d2ac1f72687f12c422e3"
 
 [language_servers.vscode-antlers-language-server]
 name = "Statamic Antlers Language Server"
