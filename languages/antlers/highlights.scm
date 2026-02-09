@@ -71,7 +71,7 @@
 "!" @operator
 
 ;; Punctuation
-["(" ")"] @punctuation.bracket
+["(" ")" "[" "]"] @punctuation.bracket
 ["," ":" ";" "."] @punctuation.delimiter
 
 ;; Interpolation

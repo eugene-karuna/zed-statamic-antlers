@@ -7,7 +7,7 @@ description = "Syntax highlighting and IntelliSense for Statamic Antlers in Zed"
 repository = "https://github.com/mynetx/zed-statamic-antlers"
 
 [grammars.antlers]
-repository = "https://github.com/Robertsson/tree-sitter-antlers"
+repository = "https://github.com/eugene-karuna/tree-sitter-antlers"
 commit = "b787c59dfc69fa753e1f62d0bcb01db69eb5e0a4"
 
 [language_servers.vscode-antlers-language-server]
