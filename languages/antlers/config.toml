@@ -1,6 +1,6 @@
 name = "Statamic Antlers"
 grammar = "antlers"
-path_suffixes = ["antlers.html"]
+path_suffixes = ["antlers.html", "antlers.php"]
 autoclose_before = "}])>"
 block_comment = ["{{# ", " #}}"]
 brackets = [
