@@ -1,67 +1,109 @@
 ;; Comments
 (antlers_comment) @comment
 
-;; Functions and modifiers
-(applied_modifier) @function.call
+;; Tag delimiters
+["{{" "}}"] @punctuation.bracket
 
-;; Variables and expressions
+;; Control structure keywords
+(if_keyword) @keyword
+(unless_keyword) @keyword
+["elseif" "else" "/if" "/unless"] @keyword
+(switch_statement "switch" @keyword)
+(switch_tag "switch" @keyword)
+
+;; Loop keywords
+(collection_keyword) @keyword
+(nav_keyword) @keyword
+(taxonomy_keyword) @keyword
+(form_keyword) @keyword
+(entries_keyword) @keyword
+
+;; Special tag keywords
+["partial" "yield" "section" "scope" "asset" "glide" "dump" "dd"
+ "user" "cache" "no_cache" "redirect" "session" "markdown"
+ "oauth" "locales" "svg" "template_content" "slot" "push"
+ "prepend" "once" "noparse" "loop" "search" "route" "link"
+ "obfuscate" "stack" "form" "errors"] @keyword
+
+;; 404 tag
+(not_found_tag "404" @keyword)
+
+;; PHP integration
+(php_raw) @embedded
+(php_echo) @embedded
+
+;; Ignore/escape
+(ignore_symbol) @comment
+
+;; Boolean literals
+["true" "false"] @constant.builtin
+"void" @constant.builtin
+
+;; Null literal
+(null_literal) @constant.builtin
+
+;; Variables and identifiers
 (variable) @variable
-(expression) @expression
+(prefixed_variable) @variable
+(parameter_name) @property
+(modifier_name) @function
 
-;; Basic types
+;; Arrow function parameter
+(arrow_function parameter: (simple_variable) @variable.parameter)
+"=>" @operator
+
+;; Modifiers
+(applied_modifier) @function
+(array_method_call) @function.method
+
+;; Array method keywords
+["orderby" "groupby" "where" "take" "skip" "merge" "pluck"] @function.builtin
+
+;; Recursive pattern
+"*recursive" @keyword
+"children" @keyword
+
+;; Strings and literals
 (string) @string
+(double_quoted_string) @string
+(single_quoted_string) @string
+(string_escape_sequence) @string.escape
 (number) @number
 
-;; Directives
-(directive) @keyword
+;; Array literals
+(array_literal "[" @punctuation.bracket)
+(array_literal "]" @punctuation.bracket)
 
-;; Tags
-(antlers_tag) @tag
-(source) @source
+;; Comparison and logical operators
+["==" "!=" "===" "!==" "<" ">" "<=" ">=" "<>" "<=>" "&&" "||"] @operator
+["and" "or" "xor" "bwa" "bwo" "bxor"] @operator
 
-;; Control structures
-[
-    "if"
-    "elseif"
-    "else"
-    "endif"
-    "unless"
-    "endunless"
-    "/if"
-    "/unless"
-] @conditional
+;; Regex operator
+"~" @operator
 
-;; Operators
-[
-    "=="
-    "!="
-    ">"
-    "<"
-    ">="
-    "<="
-    "&&"
-    "||"
-    "+"
-    "-"
-    "*"
-    "/"
-] @operator
+;; Arithmetic and assignment operators
+["+" "-" "*" "/" "**" "%" "=" "+=" "-=" "*=" "/=" "%=" "?="] @operator
 
-;; Tag delimiters
-[
-    "{{"
-    "}}"
-] @tag.delimiter
+;; Null coalescing and ternary
+"??" @operator
+"?" @operator
+"?:" @operator
 
-;; Punctuation delimiters
-[
-    ","
-    ":"
-    "|"
-] @punctuation.delimiter
+;; Modifier pipe
+"|" @operator
 
-;; Brackets
-[
-    "("
-    ")"
-] @punctuation.bracket
+;; Unary
+"!" @operator
+
+;; Dollar sign for prefixed variables
+"$" @punctuation.special
+
+;; Punctuation
+["(" ")" "[" "]"] @punctuation.bracket
+["," ":" ";" "."] @punctuation.delimiter
+
+;; Interpolation
+(interpolated_parameter) @embedded
+
+;; Error highlighting
+(ERROR) @error
