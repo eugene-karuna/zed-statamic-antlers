@@ -33,24 +33,28 @@ module.exports = grammar({
     [$.expression_with_modifiers, $.primary_expression],
     [$._tag_content, $.expression_with_modifiers],
     [$.parameter, $.binary_expression],
-    [$.variable, $.nested_variable]
-    // Temporarily removed binary/unary conflicts to test automatic resolution
-    // [$.binary_expression, $.unary_expression],
-    // [$.ternary_expression, $.unary_expression]
+    [$.variable, $.nested_variable],
+    [$.arrow_function, $.binary_expression],
+    [$.arrow_function, $.variable],
+    [$.variable, $.array_access_variable],
+    [$.variable, $.nested_variable, $.array_access_variable]
   ],
 
   precedences: $ => [
     [
       'parentheses',
-      'unary', 
+      'unary',
       'exponentiation',
       'multiplicative',
       'additive',
       'comparison',
+      'regex',
       'logical',
       'bitwise',
       'coalescing',
       'ternary',
+      'short_ternary',
+      'arrow',
       'assignment',
       'modifier'
     ]
@@ -79,11 +83,14 @@ module.exports = grammar({
       prec(2, $.asset_tag),
       prec(2, $.glide_tag),
       prec(2, $.dump_tag),
+      prec(2, $.dd_tag),
       prec(2, $.switch_statement),
+      prec(2, $.switch_tag),
       prec(2, $.user_tag),
       prec(2, $.cache_tag),
       prec(2, $.no_cache_tag),
       prec(2, $.redirect_tag),
+      prec(2, $.not_found_tag),
       prec(2, $.session_tag),
       prec(2, $.markdown_tag),
       prec(2, $.oauth_tag),
@@ -93,7 +100,14 @@ module.exports = grammar({
       prec(2, $.slot_tag),
       prec(2, $.push_tag),
       prec(2, $.prepend_tag),
+      prec(2, $.stack_tag),
       prec(2, $.once_tag),
+      prec(2, $.noparse_tag),
+      prec(2, $.loop_tag),
+      prec(2, $.search_tag),
+      prec(2, $.route_tag),
+      prec(2, $.link_tag),
+      prec(2, $.obfuscate_tag),
       prec(1, $.antlers_tag),
       $.text
     ),
@@ -154,7 +168,10 @@ module.exports = grammar({
       $.number,
       $.variable,
       $.interpolated_parameter,
-      'void'
+      'void',
+      'true',
+      'false',
+      'null'
     ),
 
     interpolated_parameter: $ => seq(
@@ -164,15 +181,22 @@ module.exports = grammar({
     ),
 
     variable: $ => choice(
+      $.prefixed_variable,
       $.simple_variable,
       $.nested_variable,
       $.array_access_variable
     ),
 
+    // $variable prefix for disambiguation
+    prefixed_variable: $ => seq(
+      '$',
+      $.identifier
+    ),
+
     simple_variable: $ => alias($.identifier, $.simple_variable),
 
     nested_variable: $ => prec.left(seq(
-      $.simple_variable,
+      choice($.simple_variable, $.prefixed_variable),
       repeat1(seq(
         choice(':', '.'),
         $.simple_variable
@@ -180,10 +204,10 @@ module.exports = grammar({
     )),
 
     array_access_variable: $ => seq(
-      $.simple_variable,
+      choice($.simple_variable, $.prefixed_variable),
       repeat1(seq(
         '[',
-        choice($.simple_variable, $.number, $.string),
+        choice($.simple_variable, $.number, $.string, $.variable),
         ']'
       ))
     ),
@@ -205,9 +229,11 @@ module.exports = grammar({
 
     expression: $ => choice(
       $.ternary_expression,
+      $.short_ternary_expression,
       $.binary_expression,
       $.parenthesized_expression,
       $.unary_expression,
+      $.arrow_function,
       prec(-1, $.primary_expression)
     ),
 
@@ -219,27 +245,67 @@ module.exports = grammar({
       $.expression
     )),
 
+    // Short ternary: value ?: default
+    short_ternary_expression: $ => prec.right('short_ternary', seq(
+      $.expression,
+      '?:',
+      $.expression
+    )),
+
+    // Arrow function: x => x.field == "value"
+    arrow_function: $ => prec.right('arrow', seq(
+      field('parameter', $.simple_variable),
+      '=>',
+      field('body', $.expression)
+    )),
 
     primary_expression: $ => choice(
       $.array_method_call,
       $.variable,
       $.string,
       $.number,
-      $.boolean
+      $.boolean,
+      $.null_literal,
+      $.array_literal
+    ),
+
+    // null literal
+    null_literal: $ => 'null',
+
+    // Array literal: ['a', 'b', 'c']
+    array_literal: $ => seq(
+      '[',
+      optional(seq(
+        $._array_element,
+        repeat(seq(',', $._array_element))
+      )),
+      optional(','), // trailing comma
+      ']'
+    ),
+
+    _array_element: $ => choice(
+      $.expression,
+      // key => value pair
+      seq($.expression, '=>', $.expression)
     ),
 
     array_method_call: $ => seq(
       $.variable,
       '.',
       choice(
-        seq('orderby', '(', ')'),
-        seq('groupby', '(', ')'),
-        seq('where', '(', ')'),
-        seq('take', '(', ')'),
-        seq('skip', '(', ')'),
-        seq('merge', '(', ')'),
-        seq('pluck', '(', ')')
+        seq('orderby', '(', optional($._method_arguments), ')'),
+        seq('groupby', '(', optional($._method_arguments), ')'),
+        seq('where', '(', optional($._method_arguments), ')'),
+        seq('take', '(', optional($._method_arguments), ')'),
+        seq('skip', '(', optional($._method_arguments), ')'),
+        seq('merge', '(', optional($._method_arguments), ')'),
+        seq('pluck', '(', optional($._method_arguments), ')')
       )
+    ),
+
+    _method_arguments: $ => seq(
+      $.expression,
+      repeat(seq(',', $.expression))
     ),
 
     array_access: $ => alias(seq(
@@ -259,7 +325,7 @@ module.exports = grammar({
         token(prec(1, '**')),
         field('right', $.expression)
       )),
-      
+
       prec.left('multiplicative', seq(
         field('left', $.expression),
         choice(
@@ -269,7 +335,7 @@ module.exports = grammar({
         ),
         field('right', $.expression)
       )),
-      
+
       prec.left('additive', seq(
         field('left', $.expression),
         choice(
@@ -278,7 +344,7 @@ module.exports = grammar({
         ),
         field('right', $.expression)
       )),
-      
+
       prec.left('comparison', seq(
         field('left', $.expression),
         choice(
@@ -287,14 +353,22 @@ module.exports = grammar({
           token(prec(1, '==')),
           token(prec(1, '!=')),
           token(prec(1, '<>')),
-          token(prec(1, '<')),
-          token(prec(1, '>')),
+          token(prec(2, '<=>')), // Spaceship operator
           token(prec(1, '<=')),
-          token(prec(1, '>='))
+          token(prec(1, '>=')),
+          token(prec(1, '<')),
+          token(prec(1, '>'))
         ),
         field('right', $.expression)
       )),
-      
+
+      // Regex matching operator
+      prec.left('regex', seq(
+        field('left', $.expression),
+        token(prec(1, '~')),
+        field('right', $.expression)
+      )),
+
       prec.left('logical', seq(
         field('left', $.expression),
         choice(
@@ -356,7 +430,7 @@ module.exports = grammar({
     modifier_name: $ => alias($.identifier, $.modifier_name),
 
     modifier_parameters: $ => choice(
-      // Colon syntax: modifier:param  
+      // Colon syntax: modifier:param
       seq(
         token(prec(10, ':')),
         choice(
@@ -368,11 +442,11 @@ module.exports = grammar({
       seq(
         '(',
         optional(seq(
-          choice($.string, $.number, $.boolean, $.variable),
+          choice($.string, $.number, $.boolean, $.null_literal, $.variable, $.array_literal),
           repeat(seq(
             ',',
-            optional(/\s*/),  
-            choice($.string, $.number, $.boolean, $.variable)
+            optional(/\s*/),
+            choice($.string, $.number, $.boolean, $.null_literal, $.variable, $.array_literal)
           ))
         )),
         ')'
@@ -418,16 +492,16 @@ module.exports = grammar({
     number: $ => token(prec(3, choice(
       // Scientific notation (must come first)
       /-?(?:[0-9](?:[0-9_]*[0-9])?(?:\.[0-9](?:[0-9_]*[0-9])?)?|\.[0-9](?:[0-9_]*[0-9])?)[eE][+-]?[0-9](?:[0-9_]*[0-9])?/,
-      
+
       // Hexadecimal
       /-?0[xX][0-9a-fA-F](?:[0-9a-fA-F_]*[0-9a-fA-F])?/,
-      
+
       // Octal
       /-?0[0-7](?:[0-7_]*[0-7])?/,
-      
+
       // Float (with decimal point)
       /-?(?:[0-9](?:[0-9_]*[0-9])?)?\.?[0-9](?:[0-9_]*[0-9])?/,
-      
+
       // Integer
       /-?[0-9](?:[0-9_]*[0-9])?/
     ))),
@@ -448,10 +522,20 @@ module.exports = grammar({
       seq(repeat($._node), '{{', 'else', '}}', repeat($._node), '{{', '/if', '}}')
     )),
 
-    unless_statement: $ => prec.right(seq(
-      '{{', $.unless_keyword, $.expression, '}}',
-      repeat($._node),
-      '{{', '/unless', '}}'
+    // Unless now supports else branch
+    unless_statement: $ => prec.right(choice(
+      seq(
+        '{{', $.unless_keyword, $.expression, '}}',
+        repeat($._node),
+        '{{', '/unless', '}}'
+      ),
+      seq(
+        '{{', $.unless_keyword, $.expression, '}}',
+        repeat($._node),
+        '{{', 'else', '}}',
+        repeat($._node),
+        '{{', '/unless', '}}'
+      )
     )),
 
     collection_loop: $ => choice(
@@ -528,15 +612,34 @@ module.exports = grammar({
       '{{', '/', $.entries_keyword, '}}'
     ),
 
-    partial_tag: $ => choice(
+    // Partial tag - supports tag pair with slots
+    partial_tag: $ => prec.right(choice(
+      // Tag pair forms (try first)
+      seq(
+        '{{', 'partial', ':', $.variable, optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'partial', ':', $.variable, '}}'
+      ),
+      seq(
+        '{{', 'partial', $.tag_parameters, '}}',
+        repeat($._node),
+        '{{', '/', 'partial', '}}'
+      ),
+      // Single tag forms
       seq('{{', 'partial', ':', $.variable, optional($.tag_parameters), '}}'),
       seq('{{', 'partial', $.tag_parameters, '}}')
-    ),
+    )),
 
-    yield_tag: $ => choice(
+    yield_tag: $ => prec.right(choice(
+      // Tag pair form (try first)
+      seq(
+        '{{', 'yield', ':', $.variable, '}}',
+        repeat($._node),
+        '{{', '/', 'yield', ':', $.variable, '}}'
+      ),
       seq('{{', 'yield', ':', $.variable, '}}'),
       seq('{{', 'yield', '}}')
-    ),
+    )),
 
     section_tag: $ => seq(
       '{{', 'section', ':', $.variable, '}}',
@@ -544,27 +647,63 @@ module.exports = grammar({
       '{{', '/', 'section', ':', $.variable, '}}'
     ),
 
-    scope_tag: $ => seq(
-      '{{', 'scope', optional($.tag_parameters), '}}',
-      repeat($._node),
-      '{{', '/', 'scope', '}}'
+    scope_tag: $ => choice(
+      seq(
+        '{{', 'scope', ':', $.variable, '}}',
+        repeat($._node),
+        '{{', '/', 'scope', ':', $.variable, '}}'
+      ),
+      seq(
+        '{{', 'scope', optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'scope', '}}'
+      )
     ),
 
-    asset_tag: $ => choice(
+    asset_tag: $ => prec.right(choice(
+      // Tag pair forms (try first)
+      seq(
+        '{{', 'asset', ':', $.variable, optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'asset', ':', $.variable, '}}'
+      ),
+      seq(
+        '{{', 'asset', $.tag_parameters, '}}',
+        repeat($._node),
+        '{{', '/', 'asset', '}}'
+      ),
       seq('{{', 'asset', ':', $.variable, optional($.tag_parameters), '}}'),
       seq('{{', 'asset', $.tag_parameters, '}}')
-    ),
+    )),
 
-    glide_tag: $ => choice(
+    glide_tag: $ => prec.right(choice(
+      // Tag pair forms (try first)
+      seq(
+        '{{', 'glide', ':', $.variable, optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'glide', ':', $.variable, '}}'
+      ),
+      seq(
+        '{{', 'glide', $.tag_parameters, '}}',
+        repeat($._node),
+        '{{', '/', 'glide', '}}'
+      ),
       seq('{{', 'glide', ':', $.variable, optional($.tag_parameters), '}}'),
       seq('{{', 'glide', $.tag_parameters, '}}')
-    ),
+    )),
 
     dump_tag: $ => choice(
       seq('{{', 'dump', ':', $.variable, '}}'),
       seq('{{', 'dump', '}}')
     ),
 
+    // dd (dump and die) tag
+    dd_tag: $ => choice(
+      seq('{{', 'dd', ':', $.variable, '}}'),
+      seq('{{', 'dd', '}}')
+    ),
+
+    // Switch expression: {{ switch ((cond) => val, ...) }}
     switch_statement: $ => seq(
       '{{', 'switch', '(',
       optional(seq(
@@ -574,18 +713,38 @@ module.exports = grammar({
       ')', '}}'
     ),
 
-    switch_case: $ => seq(
-      '(', $.expression, ')',
-      '=>',
-      choice($.string, $.number, $.boolean, $.variable)
+    switch_case: $ => choice(
+      // Regular case: (expression) => value
+      seq(
+        '(', $.expression, ')',
+        '=>',
+        choice($.string, $.number, $.boolean, $.variable)
+      ),
+      // Default case: () => value
+      seq(
+        '(', ')',
+        '=>',
+        choice($.string, $.number, $.boolean, $.variable)
+      )
     ),
 
-    user_tag: $ => choice(
+    // Switch tag (cycling): {{ switch between="odd|even" }}
+    switch_tag: $ => seq(
+      '{{', 'switch', $.tag_parameters, '}}'
+    ),
+
+    user_tag: $ => prec.right(choice(
+      // Tag pair form (try first)
+      seq(
+        '{{', 'user', optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'user', '}}'
+      ),
       seq('{{', 'user', ':', 'can', $.string, '}}'),
       seq('{{', 'user', ':', 'is', $.string, '}}'),
       seq('{{', 'user', ':', 'in', $.string, '}}'),
       seq('{{', 'user', ':', choice('can', 'is', 'in'), $.tag_parameters, '}}')
-    ),
+    )),
 
     cache_tag: $ => seq(
       '{{', 'cache', optional($.tag_parameters), '}}',
@@ -601,10 +760,19 @@ module.exports = grammar({
 
     redirect_tag: $ => seq('{{', 'redirect', $.tag_parameters, '}}'),
 
-    session_tag: $ => choice(
+    // 404 tag
+    not_found_tag: $ => seq('{{', '404', '}}'),
+
+    session_tag: $ => prec.right(choice(
+      // Tag pair form (try first)
+      seq(
+        '{{', 'session', ':', $.variable, '}}',
+        repeat($._node),
+        '{{', '/', 'session', ':', $.variable, '}}'
+      ),
       seq('{{', 'session', ':', $.variable, '}}'),
       seq('{{', 'session', $.tag_parameters, '}}')
-    ),
+    )),
 
     markdown_tag: $ => seq(
       '{{', 'markdown', '}}',
@@ -614,20 +782,31 @@ module.exports = grammar({
 
     oauth_tag: $ => seq('{{', 'oauth', ':', $.variable, optional($.tag_parameters), '}}'),
 
-    locales_tag: $ => choice(
+    locales_tag: $ => prec.right(choice(
+      // Tag pair form (try first)
+      seq(
+        '{{', 'locales', optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'locales', '}}'
+      ),
       seq('{{', 'locales', '}}'),
       seq('{{', 'locales', $.tag_parameters, '}}')
-    ),
+    )),
 
     svg_tag: $ => seq('{{', 'svg', $.tag_parameters, '}}'),
 
     template_content_tag: $ => seq('{{', 'template_content', '}}'),
 
-    slot_tag: $ => seq(
-      '{{', 'slot', ':', $.variable, '}}',
-      repeat($._node),
-      '{{', '/', 'slot', ':', $.variable, '}}'
-    ),
+    slot_tag: $ => prec.right(choice(
+      // Tag pair form (try first)
+      seq(
+        '{{', 'slot', ':', $.variable, '}}',
+        repeat($._node),
+        '{{', '/', 'slot', ':', $.variable, '}}'
+      ),
+      seq('{{', 'slot', '}}'),
+      seq('{{', 'slot', ':', $.variable, '}}')
+    )),
 
     push_tag: $ => seq(
       '{{', 'push', ':', $.variable, '}}',
@@ -641,10 +820,68 @@ module.exports = grammar({
       '{{', '/', 'prepend', ':', $.variable, '}}'
     ),
 
+    // Stack tag: {{ stack:name }}
+    stack_tag: $ => seq(
+      '{{', 'stack', ':', $.variable, '}}'
+    ),
+
     once_tag: $ => seq(
       '{{', 'once', '}}',
       repeat($._node),
       '{{', '/', 'once', '}}'
+    ),
+
+    // Noparse tag: prevents Antlers parsing inside
+    noparse_tag: $ => seq(
+      '{{', 'noparse', '}}',
+      repeat($._node),
+      '{{', '/', 'noparse', '}}'
+    ),
+
+    // Loop tag: iterates arrays
+    loop_tag: $ => choice(
+      seq(
+        '{{', 'loop', ':', $.variable, optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'loop', ':', $.variable, '}}'
+      ),
+      seq(
+        '{{', 'loop', $.tag_parameters, '}}',
+        repeat($._node),
+        '{{', '/', 'loop', '}}'
+      )
+    ),
+
+    // Search tag
+    search_tag: $ => choice(
+      seq(
+        '{{', 'search', ':', $.variable, optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'search', ':', $.variable, '}}'
+      ),
+      seq(
+        '{{', 'search', optional($.tag_parameters), '}}',
+        repeat($._node),
+        '{{', '/', 'search', '}}'
+      )
+    ),
+
+    // Route tag
+    route_tag: $ => seq(
+      '{{', 'route', ':', $.variable, optional($.tag_parameters), '}}'
+    ),
+
+    // Link tag
+    link_tag: $ => choice(
+      seq('{{', 'link', $.tag_parameters, '}}'),
+      seq('{{', 'link', ':', $.variable, optional($.tag_parameters), '}}')
+    ),
+
+    // Obfuscate tag
+    obfuscate_tag: $ => seq(
+      '{{', 'obfuscate', '}}',
+      repeat($._node),
+      '{{', '/', 'obfuscate', '}}'
     ),
 
     ignore_symbol: $ => token(seq('@', /[^{]*/)),
