@@ -1,67 +1,97 @@
 ;; Comments
 (antlers_comment) @comment
 
-;; Functions and modifiers
-(applied_modifier) @function.call
-
-;; Variables and expressions
-(variable) @variable
-(expression) @expression
-
-;; Basic types
-(string) @string
-(number) @number
-
-;; Directives
-(directive) @keyword
-
-;; Tags
-(antlers_tag) @tag
-(source) @source
+;; Tag delimiters
+["{{" "}}"] @punctuation.bracket
 
 ;; Control structures
-[
-    "if"
-    "elseif"
-    "else"
-    "endif"
-    "unless"
-    "endunless"
-    "/if"
-    "/unless"
-] @conditional
+(if_statement
+  ["if" "elseif" "else" "/if"] @keyword.control.conditional)
 
-;; Operators
-[
-    "=="
-    "!="
-    ">"
-    "<"
-    ">="
-    "<="
-    "&&"
-    "||"
-    "+"
-    "-"
-    "*"
-    "/"
-] @operator
+(unless_statement
+  ["unless" "/unless"] @keyword.control.conditional)
 
-;; Tag delimiters
-[
-    "{{"
-    "}}"
-] @tag.delimiter
+(switch_statement) @keyword.control.conditional
 
-;; Punctuation delimiters
-[
-    ","
-    ":"
-    "|"
-] @punctuation.delimiter
+;; Loop structures
+(collection_loop) @keyword.control.repeat
+(nav_loop) @keyword.control.repeat
+(taxonomy_loop) @keyword.control.repeat
+(form_loop) @keyword.control.repeat
 
-;; Brackets
-[
-    "("
-    ")"
-] @punctuation.bracket
+;; Special tags
+(partial_tag) @keyword
+(yield_tag) @keyword
+(section_tag) @keyword.control.repeat
+(scope_tag) @keyword.control.repeat
+(asset_tag) @keyword
+(glide_tag) @keyword
+(dump_tag) @keyword.debug
+(user_tag) @keyword
+(cache_tag) @keyword.directive
+(no_cache_tag) @keyword.directive
+(redirect_tag) @keyword.directive
+(session_tag) @keyword
+(markdown_tag) @keyword
+(oauth_tag) @keyword
+(locales_tag) @keyword
+(svg_tag) @keyword
+(template_content_tag) @keyword
+(slot_tag) @keyword.control.repeat
+(push_tag) @keyword.directive
+(prepend_tag) @keyword.directive
+(once_tag) @keyword.directive
+
+;; PHP integration
+(php_raw) @embedded.php
+(php_echo) @embedded.php
+
+;; Ignore/escape
+(ignore_symbol) @comment.ignore
+
+;; Void keyword
+"void" @constant.builtin
+
+;; Variables and identifiers
+(variable) @variable
+(parameter_name) @property
+
+;; Functions and modifiers
+(applied_modifier) @function.call
+(array_method_call) @function.method
+
+;; Strings and literals
+(string) @string
+(double_quoted_string) @string
+(single_quoted_string) @string
+(number) @number
+(boolean) @constant.builtin
+
+;; Binary operators
+["==" "!=" "<" ">" "<=" ">=" "&&" "||" "and" "or" "xor" "+" "-" "*" "/" "**" "%"] @operator
+
+;; Assignment operators
+["=" "+=" "-=" "*=" "/=" "%=" "?="] @operator
+
+;; Null coalescing and ternary
+"??" @operator
+["?" ":"] @operator
+
+;; Modifier pipe
+"|" @operator
+
+;; Unary operators
+["!" "-" "+"] @operator
+
+;; Brackets and punctuation
+["[" "]" "(" ")"] @punctuation.bracket
+":" @punctuation.delimiter
+
+;; Interpolation
+(interpolated_parameter) @embedded
+
+;; Text content
+(text) @text
+
+;; Error highlighting
+(ERROR) @error
