@@ -8,7 +8,7 @@ repository = "https://github.com/eugene-karuna/zed-statamic-antlers"
 
 [grammars.antlers]
 repository = "https://github.com/eugene-karuna/tree-sitter-antlers"
-commit = "a5a592b"
+commit = "c1c44bc"
 
 [language_servers.vscode-antlers-language-server]
 name = "Statamic Antlers Language Server"
